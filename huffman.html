@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Huffman Coding Visualizer</title>
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg,#1e293b,#020617);
+  color:#e2e8f0;
+  text-align:center;
+}
+
+h1 { margin-top:20px }
+
+.top-bar {
+  display:flex;
+  justify-content:flex-start;
+  padding:10px 20px;
+}
+
+.top-bar button {
+  background:#334155;
+  color:white;
+  border-radius:8px;
+  padding:8px 14px;
+  cursor:pointer;
+  border:none;
+  transition:0.2s;
+}
+.top-bar button:hover { background:#475569 }
+
+.controls {
+  margin:20px auto;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+input, button {
+  padding:10px;
+  border-radius:8px;
+  border:none;
+}
+
+button {
+  background:#6366f1;
+  color:white;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:hover { background:#4f46e5 }
+
+.box {
+  max-width:900px;
+  margin:20px auto;
+  background:rgba(255,255,255,0.05);
+  padding:20px;
+  border-radius:12px;
+  text-align:left;
+  line-height:1.6;
+}
+
+table {
+  border-collapse: collapse;
+  margin:auto;
+}
+
+td, th {
+  border:1px solid #334155;
+  padding:8px;
+}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <button onclick="goHome()">🏠 Home</button>
+</div>
+
+<h1>Huffman Coding Visualizer</h1>
+
+<div class="controls">
+  <input id="text" placeholder="Enter text (e.g. AABBC)">
+  <button onclick="buildHuffman()">Generate</button>
+</div>
+
+<div class="box" id="explanation">
+<h3>Huffman Coding</h3>
+<p>Greedy algorithm used for data compression by assigning shorter codes to frequent characters.</p>
+
+<ul>
+  <li>Count frequency of each character</li>
+  <li>Build binary tree using lowest frequencies</li>
+  <li>Assign prefix-free binary codes</li>
+</ul>
+
+<p><b>Time:</b> O(n log n)</p>
+<p><b>Property:</b> No code is prefix of another</p>
+<div class="box">
+<h3>Frequencies</h3>
+<div id="freq"></div>
+</div>
+
+<div class="box">
+<h3>Codes</h3>
+<div id="codes"></div>
+</div>
+
+<div class="box">
+<h3>Encoded Output</h3>
+<p id="encoded">-</p>
+</div>
+
+<div class="box">
+<h3>Compression Analysis</h3>
+<p id="analysis">-</p>
+</div>
+
+<div class="box">
+<h3>Huffman Tree</h3>
+<pre id="tree"></pre>
+</div>
+<h5 style="position: absolute; bottom: -1; right: 20px;">MADE by :- <i>Nipun Garg & Nikhil Tiwari</i></h5>
+
+<script>
+function goHome() {
+  window.location.href = "index.html";
+}
+class Node {
+  constructor(char, freq, left=null, right=null){
+    this.char = char;
+    this.freq = freq;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+function printTree(node, indent=""){
+  if(!node) return "";
+
+  let value = node.char ? `${node.char} (${node.freq})` : `(${node.freq})`;
+
+  let result = indent + value + "\n";
+
+  result += printTree(node.left, indent + "  ");
+  result += printTree(node.right, indent + "  ");
+
+  return result;
+}
+
+function buildHuffman(){
+
+  document.getElementById("freq").innerHTML = "";
+  document.getElementById("codes").innerHTML = "";
+  document.getElementById("encoded").innerText = "-";
+  document.getElementById("analysis").innerText = "-";
+  document.getElementById("tree").innerText = "";
+
+  let text = document.getElementById("text").value;
+  if(!text) return alert("Enter text");
+
+  let freqMap = {};
+  for(let ch of text){
+    freqMap[ch] = (freqMap[ch] || 0) + 1;
+  }
+
+  // frequency table
+  let freqHTML = "<table><tr><th>Char</th><th>Freq</th></tr>";
+  for(let ch in freqMap){
+    freqHTML += `<tr><td>${ch}</td><td>${freqMap[ch]}</td></tr>`;
+  }
+  freqHTML += "</table>";
+  document.getElementById("freq").innerHTML = freqHTML;
+
+  // priority queue
+  let pq = [];
+  for(let ch in freqMap){ pq.push(new Node(ch, freqMap[ch])); }
+
+  while(pq.length > 1){
+    pq.sort((a,b)=>a.freq-b.freq);
+    let left = pq.shift();
+    let right = pq.shift();
+    pq.push(new Node(null, left.freq+right.freq, left, right));
+  }
+
+  let root = pq[0];
+  let codes = {};
+
+  function generate(node, code){
+    if(!node) return;
+    if(node.char !== null) codes[node.char] = code;
+    generate(node.left, code+"0");
+    generate(node.right, code+"1");
+  }
+
+  generate(root, "");
+
+  // codes table
+  let codeHTML = "<table><tr><th>Char</th><th>Code</th></tr>";
+  for(let ch in codes){
+    codeHTML += `<tr><td>${ch}</td><td>${codes[ch]}</td></tr>`;
+  }
+  codeHTML += "</table>";
+  document.getElementById("codes").innerHTML = codeHTML;
+
+  // encoded string
+  let encoded = "";
+  for(let ch of text){ encoded += codes[ch]; }
+  document.getElementById("encoded").innerText = encoded;
+
+  // compression analysis
+  let originalBits = text.length * 8;
+  let compressedBits = encoded.length;
+  let ratio = ((compressedBits/originalBits)*100).toFixed(2);
+
+  document.getElementById("analysis").innerText =
+    `Original: ${originalBits} bits | Compressed: ${compressedBits} bits | Ratio: ${ratio}%`;
+
+  // print tree
+  document.getElementById("tree").innerText = printTree(root);
+}
+</script>
+
+</body>
+</html>

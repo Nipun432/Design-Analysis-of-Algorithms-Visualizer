@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LCS Visualizer</title>
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg,#1e293b,#020617);
+  color:#e2e8f0;
+  text-align:center;
+}
+
+h1 { margin-top:20px }
+
+.top-bar {
+  display:flex;
+  justify-content:flex-start;
+  padding:10px 20px;
+}
+
+.top-bar button {
+  background:#334155;
+  color:white;
+  border-radius:8px;
+  padding:8px 14px;
+  cursor:pointer;
+  border:none;
+  transition:0.2s;
+}
+.top-bar button:hover { background:#475569 }
+
+.controls {
+  margin:20px auto;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+input, button {
+  padding:10px;
+  border-radius:8px;
+  border:none;
+}
+
+button {
+  background:#6366f1;
+  color:white;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:hover { background:#4f46e5 }
+
+.box {
+  max-width:900px;
+  margin:20px auto;
+  background:rgba(255,255,255,0.05);
+  padding:20px;
+  border-radius:12px;
+  text-align:left;
+  line-height:1.6;
+}
+
+table {
+  border-collapse: collapse;
+  margin:auto;
+}
+
+td {
+  border:1px solid #334155;
+  width:35px;
+  height:35px;
+  text-align:center;
+  transition: background 0.3s;
+}
+
+.path {
+  background:#22c55e;
+}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <button onclick="goHome()">🏠 Home</button>
+</div>
+
+<h1>LCS Visualizer (Longest Common Subsequence)</h1>
+
+<div class="controls">
+  <input id="str1" placeholder="String 1 (e.g. ABCDGH)">
+  <input id="str2" placeholder="String 2 (e.g. AEDFHR)">
+  <button onclick="solveLCS()">Compute LCS</button>
+</div>
+
+<div class="box" id="explanation">
+<h3>Longest Common Subsequence (LCS)</h3>
+<p>Finds the longest sequence present in both strings (not necessarily continuous).</p>
+
+<ul>
+  <li>If characters match → move diagonally +1</li>
+  <li>If not → take max of left or top</li>
+</ul>
+
+<p><b>Time:</b> O(n × m)</p>
+<p><b>Space:</b> O(n × m)</p>
+</div>
+
+<div class="box">
+<h3>DP Table</h3>
+<div id="table"></div>
+</div>
+
+<div class="box">
+<h3>LCS Result</h3>
+<p id="result">-</p>
+</div>
+<h5 style="position: absolute; bottom: -1; right: 20px;">MADE by :- <i>Nipun Garg & Nikhil Tiwari</i></h5>
+
+<script>
+function goHome() {
+  window.location.href = "index.html";
+}
+function solveLCS(){
+  document.getElementById("table").innerHTML = "";
+  document.getElementById("result").innerText = "-";
+  let s1 = document.getElementById("str1").value;
+  let s2 = document.getElementById("str2").value;
+
+  if(!s1 || !s2) return alert("Enter both strings");
+
+  let n = s1.length;
+  let m = s2.length;
+
+  let dp = Array(n+1).fill().map(()=>Array(m+1).fill(0));
+
+  for(let i=1;i<=n;i++){
+    for(let j=1;j<=m;j++){
+      if(s1[i-1] === s2[j-1]){
+        dp[i][j] = 1 + dp[i-1][j-1];
+      } else {
+        dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+      }
+    }
+  }
+
+  // render table
+  let html = "<table>";
+  html += "<tr><td></td>";
+  for(let ch of s2) html += `<td>${ch}</td>`;
+  html += "</tr>";
+
+  for(let i=0;i<=n;i++){
+    html += "<tr>";
+    html += i>0 ? `<td>${s1[i-1]}</td>` : "<td></td>";
+    for(let j=0;j<=m;j++){
+      html += `<td id='cell-${i}-${j}'>${dp[i][j]}</td>`;
+    }
+    html += "</tr>";
+  }
+  html += "</table>";
+
+  document.getElementById("table").innerHTML = html;
+
+  // backtrack + highlight
+  let i=n, j=m;
+  let lcs="";
+
+  while(i>0 && j>0){
+    if(s1[i-1] === s2[j-1]){
+      lcs = s1[i-1] + lcs;
+      document.getElementById(`cell-${i}-${j}`).classList.add("path");
+      i--; j--;
+    } else if(dp[i-1][j] > dp[i][j-1]){
+      i--;
+    } else {
+      j--;
+    }
+  }
+
+  document.getElementById("result").innerText = `LCS: ${lcs}`;
+}
+</script>
+
+</body>
+</html>

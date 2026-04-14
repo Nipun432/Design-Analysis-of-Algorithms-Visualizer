@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DAA Visualizer</title>
+  <style>body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg,#1e293b,#020617);
+  color:#e2e8f0;
+  text-align:center;
+}
+
+h1 { margin-top:20px }
+
+.top-bar {
+  display:flex;
+  justify-content:flex-start;
+  padding:10px 20px;
+}
+
+.top-bar button {
+  background:#334155;
+  color:white;
+  border-radius:8px;
+  padding:8px 14px;
+  cursor:pointer;
+  border:none;
+  transition:0.2s;
+}
+.top-bar button:hover { background:#475569 }
+
+.controls {
+  margin:20px auto;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+button, select, input {
+  padding:10px;
+  border-radius:8px;
+  border:none;
+}
+
+button {
+  background:#6366f1;
+  color:#fff;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:hover { background:#4f46e5 }
+
+button:disabled {
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.array-container {
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+  height:320px;
+  margin-top:20px;
+}
+
+.bar {
+  width:10px;
+  margin:1px;
+  background:linear-gradient(to top,#22c55e,#4ade80);
+  transition:height .15s, background .15s;
+}
+
+.stats {
+  margin-top:15px;
+  display:flex;
+  justify-content:center;
+  gap:40px;
+  font-weight:500;
+}
+
+.explanation {
+  max-width:800px;
+  margin:20px auto;
+  text-align:left;
+  background:rgba(255,255,255,.05);
+  padding:20px;
+  border-radius:12px;
+  line-height:1.6;
+}
+</style>
+</head>
+<body>
+  <div class="top-bar">
+  <button onclick="goHome()">🏠 Home</button>
+</div>
+  <h1>DAA Algorithm Visualizer</h1>
+
+  <div class="controls">
+    <button id="genBtn" onclick="generateArray()">Generate Array</button>
+
+    <select id="algo" onchange="updateExplanation()">
+      <option value="bubble">Bubble</option>
+      <option value="insertion">Insertion</option>
+      <option value="selection">Selection</option>
+      <option value="merge">Merge Sort</option>
+      <option value="quick">Quick Sort</option>
+    </select>
+
+    <label>Speed</label>
+    <input type="range" id="speed" min="10" max="200" value="50" />
+
+    <label>Size</label>
+    <input type="range" id="size" min="10" max="100" value="30" onchange="generateArray(this.value)" />
+
+    <button id="startBtn" onclick="startSort()">Start</button>
+    <button id="stopBtn" onclick="stopSort()" disabled>Stop</button>
+  </div>
+
+  <div class="array-container" id="array"></div>
+
+  <div class="stats">
+    <p>Comparisons: <span id="comp">0</span></p>
+    <p>Swaps: <span id="swap">0</span></p>
+  </div>
+
+  <div class="explanation" id="explanation"></div>
+  <h5 style="position: absolute; bottom: -1; right: 20px;">MADE by :- <i>Nipun Garg & Nikhil Tiwari</i></h5>
+
+  <script>
+    function goHome() {
+  window.location.href = "index.html";
+}
+    let arr = [];
+    let comparisons = 0;
+    let swaps = 0;
+    let isSorting = false;
+
+    const sleep = () => new Promise(r => setTimeout(r, document.getElementById("speed").value));
+
+    function updateStats(){
+      document.getElementById("comp").innerText = comparisons;
+      document.getElementById("swap").innerText = swaps;
+    }
+
+    function setControls(running){
+      document.getElementById("startBtn").disabled = running;
+      document.getElementById("stopBtn").disabled = !running;
+      document.getElementById("genBtn").disabled = running;
+      document.getElementById("algo").disabled = running;
+    }
+
+    function generateArray(size=30){
+      arr=[]; comparisons=0; swaps=0; updateStats();
+      const container=document.getElementById("array");
+      container.innerHTML="";
+
+      for(let i=0;i<size;i++){
+        let val=Math.floor(Math.random()*300)+10;
+        arr.push(val);
+        let bar=document.createElement("div");
+        bar.classList.add("bar");
+        bar.style.height=val+"px";
+        container.appendChild(bar);
+      }
+    }
+
+    function stopSort(){ isSorting=false; }
+
+    async function bubbleSort(){
+      let bars=document.getElementsByClassName("bar");
+      for(let i=0;i<arr.length && isSorting;i++){
+        for(let j=0;j<arr.length-i-1 && isSorting;j++){
+          comparisons++; updateStats();
+          bars[j].style.background="red";
+          bars[j+1].style.background="red";
+          await sleep();
+
+          if(arr[j]>arr[j+1]){
+            swaps++;
+            [arr[j],arr[j+1]]=[arr[j+1],arr[j]];
+            bars[j].style.height=arr[j]+"px";
+            bars[j+1].style.height=arr[j+1]+"px";
+            updateStats();
+          }
+
+          bars[j].style.background="green";
+          bars[j+1].style.background="green";
+        }
+      }
+    }
+
+    async function insertionSort(){
+      let bars=document.getElementsByClassName("bar");
+      for(let i=1;i<arr.length && isSorting;i++){
+        let key=arr[i]; let j=i-1;
+        bars[i].style.background="orange";
+        await sleep();
+
+        while(j>=0 && arr[j]>key && isSorting){
+          comparisons++; swaps++; updateStats();
+          bars[j].style.background="red";
+          bars[j+1].style.background="red";
+          await sleep();
+
+          arr[j+1]=arr[j];
+          bars[j+1].style.height=arr[j+1]+"px";
+
+          bars[j].style.background="green";
+          bars[j+1].style.background="green";
+          j--;
+        }
+
+        arr[j+1]=key;
+        bars[j+1].style.height=key+"px";
+        bars[j+1].style.background="#22c55e";
+      }
+    }
+
+    async function selectionSort(){
+      let bars=document.getElementsByClassName("bar");
+      for(let i=0;i<arr.length && isSorting;i++){
+        let min=i;
+        bars[min].style.background="purple";
+
+        for(let j=i+1;j<arr.length && isSorting;j++){
+          comparisons++; updateStats();
+          bars[j].style.background="red";
+          await sleep();
+
+          if(arr[j]<arr[min]){
+            bars[min].style.background="green";
+            min=j;
+            bars[min].style.background="purple";
+          }
+
+          if(j!==min) bars[j].style.background="green";
+        }
+
+        if(min!==i){
+          swaps++;
+          [arr[i],arr[min]]=[arr[min],arr[i]];
+          bars[i].style.height=arr[i]+"px";
+          bars[min].style.height=arr[min]+"px";
+          updateStats();
+        }
+
+        bars[i].style.background="#22c55e";
+      }
+    }
+
+    // ===== MERGE SORT =====
+    async function merge(l, m, r){
+      let bars=document.getElementsByClassName("bar");
+      let left=arr.slice(l,m+1);
+      let right=arr.slice(m+1,r+1);
+      let i=0,j=0,k=l;
+
+      while(i<left.length && j<right.length && isSorting){
+        comparisons++; updateStats();
+        bars[k].style.background="red";
+        await sleep();
+
+        if(left[i]<=right[j]) arr[k]=left[i++];
+        else arr[k]=right[j++];
+
+        bars[k].style.height=arr[k]+"px";
+        bars[k].style.background="#22c55e";
+        k++;
+      }
+
+      while(i<left.length && isSorting){
+        arr[k]=left[i++];
+        bars[k].style.height=arr[k]+"px";
+        bars[k].style.background="#22c55e";
+        k++; await sleep();
+      }
+
+      while(j<right.length && isSorting){
+        arr[k]=right[j++];
+        bars[k].style.height=arr[k]+"px";
+        bars[k].style.background="#22c55e";
+        k++; await sleep();
+      }
+    }
+
+    async function mergeSortUtil(l,r){
+      if(l>=r || !isSorting) return;
+      let m=Math.floor((l+r)/2);
+      await mergeSortUtil(l,m);
+      await mergeSortUtil(m+1,r);
+      await merge(l,m,r);
+    }
+
+    async function mergeSort(){ await mergeSortUtil(0,arr.length-1); }
+
+    // ===== QUICK SORT =====
+    async function partition(l, r){
+      let bars=document.getElementsByClassName("bar");
+      let pivot=arr[r];
+      bars[r].style.background="yellow";
+      let i=l-1;
+
+      for(let j=l;j<r && isSorting;j++){
+        comparisons++; updateStats();
+        bars[j].style.background="red";
+        await sleep();
+
+        if(arr[j] < pivot){
+          i++;
+          swaps++;
+          [arr[i],arr[j]]=[arr[j],arr[i]];
+          bars[i].style.height=arr[i]+"px";
+          bars[j].style.height=arr[j]+"px";
+          updateStats();
+        }
+
+        bars[j].style.background="green";
+      }
+
+      swaps++;
+      [arr[i+1],arr[r]]=[arr[r],arr[i+1]];
+      bars[i+1].style.height=arr[i+1]+"px";
+      bars[r].style.height=arr[r]+"px";
+      bars[r].style.background="green";
+      bars[i+1].style.background="#22c55e";
+      return i+1;
+    }
+
+    async function quickSortUtil(l,r){
+      if(l<r && isSorting){
+        let pi=await partition(l,r);
+        await quickSortUtil(l,pi-1);
+        await quickSortUtil(pi+1,r);
+      }
+    }
+
+    async function quickSort(){ await quickSortUtil(0,arr.length-1); }
+
+    function updateExplanation(){
+  const algo=document.getElementById("algo").value;
+  const exp=document.getElementById("explanation");
+
+  if(algo==="bubble")
+    exp.innerHTML=`<h3>Bubble Sort</h3>
+    <p>Repeatedly compares adjacent elements and swaps them if needed.</p>
+    <p><b>Time:</b> O(n²) | <b>Space:</b> O(1)</p>`;
+
+  else if(algo==="insertion")
+    exp.innerHTML=`<h3>Insertion Sort</h3>
+    <p>Builds sorted array one element at a time.</p>
+    <p><b>Time:</b> O(n²) | <b>Space:</b> O(1)</p>`;
+
+  else if(algo==="selection")
+    exp.innerHTML=`<h3>Selection Sort</h3>
+    <p>Selects minimum element and places it at correct position.</p>
+    <p><b>Time:</b> O(n²) | <b>Space:</b> O(1)</p>`;
+
+  else if(algo==="merge")
+    exp.innerHTML=`<h3>Merge Sort</h3>
+    <p>Divide and conquer algorithm that merges sorted halves.</p>
+    <p><b>Time:</b> O(n log n) | <b>Space:</b> O(n)</p>`;
+
+  else
+    exp.innerHTML=`<h3>Quick Sort</h3>
+    <p>Partitions array around a pivot element.</p>
+    <p><b>Time:</b> Avg: O(n log n), Worst: O(n²) | <b>Space:</b> O(log n)</p>`;
+}
+
+    async function startSort(){
+      if(!arr.length) generateArray();
+      isSorting=true; setControls(true);
+
+      let algo=document.getElementById("algo").value;
+      if(algo==="bubble") await bubbleSort();
+      else if(algo==="insertion") await insertionSort();
+      else if(algo==="selection") await selectionSort();
+      else if(algo==="merge") await mergeSort();
+      else await quickSort();
+
+      isSorting=false; setControls(false);
+    }
+
+    generateArray();
+    updateExplanation();
+  </script>
+  
+</body>
+</html>
